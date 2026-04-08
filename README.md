@@ -30,7 +30,7 @@ graph LR
 
 ```bash
 # Clone and install
-git clone --recurse-submodules https://github.com/sandeepdhami/mindgraph.git
+git clone --recurse-submodules https://github.com/sandeep84397/mindgraph.git
 cd mindgraph
 pip install watchdog
 
@@ -190,6 +190,34 @@ The SQLite WAL mode ensures concurrent read/write safety.
 | `python3 -m tools search <kb> "query" [--limit N] [--verbose]` | Search the index |
 | `python3 -m tools lint <kb> [--fix]` | Health check |
 | `python3 -m tools watch <kb> start\|stop\|status` | Manage file watcher |
+| `python3 -m tools stats <kb> [--json]` | Show token savings stats |
+| `python3 -m tools learn <kb> "topic" [--json]` | Learn a topic from codebase scan |
+
+## Persisting the Knowledge Graph
+
+By default, `.mindgraph/` is gitignored. The knowledge graph can be rebuilt from wiki files:
+
+```bash
+python3 -m tools fingerprint . --force
+```
+
+However, **tracking `.mindgraph/mindgraph.db` in git is recommended** for teams and long-lived projects. The DB accumulates value over time:
+
+- **Caveman-compressed briefs** — each brief costs an LLM call to generate. Rebuilding a 500-section index means hundreds of API calls.
+- **Cumulative stats** — search counts and token savings history are stored in the DB's metadata table.
+- **Learn-on-miss pages** — auto-learned wiki entries from search misses build up project-specific knowledge that's expensive to regenerate.
+- **Instant onboarding** — new clones get the full knowledge graph immediately with no rebuild step.
+
+To enable, remove `.mindgraph/` from `.gitignore` and add:
+
+```gitignore
+# Track the DB but exclude SQLite temp files
+.mindgraph/*.db-wal
+.mindgraph/*.db-shm
+.mindgraph/watcher.pid
+```
+
+For large projects where the DB exceeds ~5MB, consider [Git LFS](https://git-lfs.com/) or running `sqlite3 .mindgraph/mindgraph.db "VACUUM"` before commits to keep it compact.
 
 ## Credits
 

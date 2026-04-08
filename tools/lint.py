@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Optional, List
 
 from tools.db import delete_sections_for_file, get_connection, get_all_sections
+from tools.ingest import slugify
 from tools.parser import compute_content_hash, parse_sections
 
 SKIP_FILES = {"schema.md", "index.md", "log.md"}
@@ -78,8 +79,11 @@ def lint_broken_links(kb_root: Path) -> list[LintIssue]:
 
         for i, line in enumerate(content.split("\n"), 1):
             for match in link_pattern.finditer(line):
-                page_name = match.group(1)
-                slug = page_name.lower().replace(" ", "_")
+                raw_link = match.group(1)
+                # Handle pipe-style [[Target|display text]] — use only the target
+                page_name = raw_link.split("|")[0].strip()
+                # Use the same slugify() as ingest so links resolve consistently
+                slug = slugify(page_name)
                 target = wiki_dir / f"{slug}.md"
                 if not target.exists():
                     issues.append(LintIssue(
@@ -87,7 +91,7 @@ def lint_broken_links(kb_root: Path) -> list[LintIssue]:
                         category="broken_link",
                         file=rel_path,
                         line=i,
-                        message=f"Broken link [[{page_name}]] — wiki/{slug}.md not found",
+                        message=f"Broken link [[{raw_link}]] — wiki/{slug}.md not found",
                     ))
     return issues
 

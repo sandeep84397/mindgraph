@@ -8,6 +8,8 @@ COMMANDS = {
     "ingest": "tools.ingest",
     "lint": "tools.lint",
     "watch": "tools.watch",
+    "stats": "tools.stats",
+    "learn": "tools.learn",
 }
 
 

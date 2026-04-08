@@ -1,13 +1,17 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "mindgraph",
-  "title": "MindGraph",
-  "description": "Fingerprinted knowledge graph with real-time reactive indexing. Combines Karpathy's LLM wiki pattern with caveman compression for token-efficient multi-session orchestration.",
-  "keywords": ["knowledge-graph", "wiki", "compression", "fingerprint", "fts5", "caveman"],
-  "category": "productivity",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sandeepdhami/mindgraph"
-  }
+  "owner": {
+    "name": "sandeep84397"
+  },
+  "plugins": [
+    {
+      "name": "mindgraph",
+      "source": "./",
+      "description": "Fingerprinted knowledge graph with real-time reactive indexing.",
+      "version": "0.1.0",
+      "homepage": "https://github.com/sandeep84397/mindgraph",
+      "repository": "https://github.com/sandeep84397/mindgraph",
+      "license": "MIT"
+    }
+  ]
 }
