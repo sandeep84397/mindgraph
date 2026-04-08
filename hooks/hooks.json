@@ -1,0 +1,16 @@
+{
+  "hooks": [
+    {
+      "matcher": "Edit|Write",
+      "event": "PostToolUse",
+      "command": "MINDGRAPH_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd); if [ -d \"$MINDGRAPH_ROOT/.mindgraph\" ]; then python3 -m tools fingerprint \"$MINDGRAPH_ROOT\" --file \"$CLAUDE_FILE\" 2>/dev/null & fi",
+      "async": true
+    },
+    {
+      "matcher": "",
+      "event": "SessionStart",
+      "command": "MINDGRAPH_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd); if [ -d \"$MINDGRAPH_ROOT/.mindgraph\" ]; then echo '[MindGraph] Knowledge base detected. Use search before reading files: python3 -m tools search . \"query\"'; fi",
+      "async": true
+    }
+  ]
+}

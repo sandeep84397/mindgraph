@@ -1,0 +1,8 @@
+{
+  "name": "mindgraph",
+  "description": "Fingerprinted knowledge graph — combines Karpathy wiki pattern with caveman compression for token-efficient Claude Code sessions",
+  "version": "0.1.0",
+  "skills": ["skills/mindgraph"],
+  "commands": ["commands"],
+  "hooks": "hooks/hooks.json"
+}

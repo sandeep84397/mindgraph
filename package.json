@@ -1,0 +1,7 @@
+{
+  "name": "mindgraph",
+  "version": "0.1.0",
+  "description": "Fingerprinted knowledge graph with reactive indexing for Claude Code",
+  "type": "module",
+  "license": "MIT"
+}
