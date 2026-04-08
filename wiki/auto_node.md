@@ -1,0 +1,1 @@
+Created `wiki/auto-node.md`. The page covers all four functions with tables for the extension mappings and language patterns, documents the fallback stub structure, and cross-references the watcher and ingest modules.

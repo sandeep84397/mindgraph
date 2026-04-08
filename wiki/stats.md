@@ -1,0 +1,1 @@
+Created `wiki/tools-stats.md`. The page covers the token estimation approach, all three functions (`estimate_tokens`, `compute_savings`, `record_search`), and cross-references to the DB module and search pipeline.

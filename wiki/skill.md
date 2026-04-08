@@ -1,0 +1,1 @@
+Created `/Users/sandeepdhami/Projects/mindgraph/wiki/mindgraph-skill.md`. The page covers the three-layer architecture, all CLI tools, the five main workflows, the watcher daemon behavior, and the token efficiency protocol, with cross-references to related wiki pages.

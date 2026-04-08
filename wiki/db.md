@@ -1,0 +1,1 @@
+Created `wiki/tools-db.md`. The page covers the FTS5 schema and triggers, connection setup with WAL/FK pragmas, the three write operations (`upsert_section`, `delete_sections_for_file`, `delete_stale_sections`), and the `search_fts` query function.
