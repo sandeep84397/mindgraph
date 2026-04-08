@@ -26,28 +26,97 @@ graph LR
 
 ## Installation
 
-### As a Claude Code Plugin
-
-```bash
-# Clone and install
-git clone --recurse-submodules https://github.com/sandeep84397/mindgraph.git
-cd mindgraph
-pip install watchdog
-
-# Install as Claude Code plugin
-claude plugin install ./mindgraph
-```
-
-### Dependencies
+### Prerequisites
 
 - Python 3.9+
 - SQLite with FTS5 (included in Python stdlib)
-- `watchdog` (`pip install watchdog`)
-- Claude CLI (`claude --print` for caveman compression)
+- Claude CLI (for caveman compression — `claude --print`)
+- `watchdog` (for real-time file watching)
+
+### Step 1: Clone and install
+
+```bash
+git clone --recurse-submodules https://github.com/sandeep84397/mindgraph.git
+cd mindgraph
+pip install watchdog
+```
+
+### Step 2: Add MindGraph to your project
+
+```bash
+cd /path/to/your-project
+
+# Initialize the knowledge base (creates wiki/, .mindgraph/, CLAUDE.md)
+python3 -m tools init . --mode project
+
+# Fingerprint existing wiki files
+python3 -m tools fingerprint .
+
+# Start the watcher (auto-indexes file changes)
+python3 -m tools watch . start --watch src lib app tools
+```
+
+> **Note:** Replace `src lib app tools` with whatever directories contain your source code.
+
+### Step 3: Verify it works
+
+```bash
+# Search the index
+python3 -m tools search . "your search term"
+
+# Check token savings
+python3 -m tools stats .
+
+# Health check
+python3 -m tools lint .
+```
+
+### What `init --mode project` creates
+
+```
+your-project/
+├── wiki/                   # Auto-generated wiki articles (commit these)
+│   ├── schema.md           # Rules for wiki page structure
+│   ├── index.md            # Table of contents
+│   └── log.md              # Audit trail
+├── .mindgraph/
+│   └── mindgraph.db        # SQLite + FTS5 index (gitignored by default)
+└── CLAUDE.md               # Tells Claude sessions to search the graph first
+```
+
+### Making Claude Code use it automatically
+
+Add MindGraph's hooks to your project's `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "python3 -m tools fingerprint . --file \"$CLAUDE_FILE\" 2>/dev/null &",
+        "timeout": 5000
+      }
+    ],
+    "SessionStart": [
+      {
+        "command": "echo '[MindGraph] Knowledge base detected. Search before reading: python3 -m tools search . \"query\"'",
+        "timeout": 3000
+      }
+    ]
+  }
+}
+```
+
+This gives you:
+- **SessionStart**: Reminds Claude to search the graph before reading files
+- **PostToolUse**: Auto-re-fingerprints any file Claude edits
+
+> **Note:** `claude plugin install ./mindgraph` does not work. Claude Code's plugin marketplace only supports published plugins, not local directories. Use the hooks setup above instead.
 
 ## Quick Start
 
-### Standalone Knowledge Base
+### As a standalone knowledge base
 
 ```bash
 # Initialize
@@ -56,27 +125,31 @@ python3 -m tools init ~/my-research --mode standalone
 # Start the reactive watcher
 python3 -m tools watch ~/my-research start
 
-# Ingest a source
+# Ingest a source document
 python3 -m tools ingest ~/my-research ~/papers/attention.pdf
 
 # Search
 python3 -m tools search ~/my-research "transformer attention mechanism"
 
-# Health check
-python3 -m tools lint ~/my-research
+# Check token savings
+python3 -m tools stats ~/my-research
 ```
 
-### Project Plugin
+### As a project knowledge graph
 
 ```bash
 # Initialize in your project root
 python3 -m tools init . --mode project
 
-# Start watcher — auto-creates wiki nodes for new files
-python3 -m tools watch . start
+# Start watcher — auto-creates wiki nodes for new/changed files
+python3 -m tools watch . start --watch src lib app
 
 # Search your project's knowledge graph
 python3 -m tools search . "authentication middleware"
+
+# Disable/enable search
+python3 -m tools search . --disable
+python3 -m tools search . --enable
 ```
 
 ## Architecture
@@ -185,9 +258,10 @@ The SQLite WAL mode ensures concurrent read/write safety.
 | Command | Description |
 |---------|-------------|
 | `python3 -m tools init <path> [--mode standalone\|project]` | Initialize knowledge base |
-| `python3 -m tools ingest <kb> <source>` | Ingest a source document |
+| `python3 -m tools ingest <kb> <source> [--no-compile]` | Ingest a source document |
 | `python3 -m tools fingerprint <kb> [--force] [--file path]` | Rebuild fingerprint index |
-| `python3 -m tools search <kb> "query" [--limit N] [--verbose]` | Search the index |
+| `python3 -m tools search <kb> "query" [--limit N] [--no-learn]` | Search the index |
+| `python3 -m tools search <kb> --disable \| --enable` | Toggle search on/off |
 | `python3 -m tools lint <kb> [--fix]` | Health check |
 | `python3 -m tools watch <kb> start\|stop\|status` | Manage file watcher |
 | `python3 -m tools stats <kb> [--json]` | Show token savings stats |
