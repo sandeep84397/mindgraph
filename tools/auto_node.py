@@ -122,9 +122,11 @@ FILE: {filename}
 
 
 def auto_create_node(filepath: Path, kb_root: Path) -> Optional[dict]:
-    """Create a wiki node for a new file and return stats.
+    """Create or update a wiki node for a source file.
 
-    Returns None if file should be skipped (already has a wiki page, or is in wiki/).
+    - Creates a new wiki page if one doesn't exist.
+    - Regenerates the wiki page if the source file has changed.
+    - Returns None if file should be skipped (is in wiki/).
     """
     wiki_dir = kb_root / "wiki"
 
@@ -135,24 +137,25 @@ def auto_create_node(filepath: Path, kb_root: Path) -> Optional[dict]:
     except ValueError:
         pass
 
-    # Check if wiki page already exists for this file
     slug = slugify(filepath.stem)
-    if (wiki_dir / f"{slug}.md").exists():
-        return None
+    wiki_path = wiki_dir / f"{slug}.md"
+    is_update = wiki_path.exists()
 
     filename, content = generate_wiki_stub(filepath, kb_root)
     wiki_path = wiki_dir / filename
     wiki_path.write_text(content, encoding="utf-8")
 
-    update_index(kb_root, [filename])
-    append_log(kb_root, "AUTO", f"Auto-created wiki node for {filepath.name} → wiki/{filename}")
+    if not is_update:
+        update_index(kb_root, [filename])
+    action = "Updated" if is_update else "Auto-created"
+    append_log(kb_root, "AUTO", f"{action} wiki node for {filepath.name} → wiki/{filename}")
 
-    # Fingerprint the new page
+    # Fingerprint the new/updated page
     from tools.db import get_connection
     from tools.fingerprint import fingerprint_file
 
     conn = get_connection(kb_root)
-    stats = fingerprint_file(kb_root, wiki_path, conn)
+    stats = fingerprint_file(kb_root, wiki_path, conn, force=is_update)
     conn.close()
 
-    return {"wiki_page": filename, "sections": stats["new"]}
+    return {"wiki_page": filename, "sections": stats["new"] + stats["updated"], "updated": is_update}

@@ -111,11 +111,12 @@ class MindGraphHandler(FileSystemEventHandler):
                      f"({stats['new']} new, {stats['updated']} updated, "
                      f"{stats['stale_removed']} stale)")
             else:
-                # Non-wiki file: auto-create a wiki node if it doesn't exist
+                # Non-wiki file: create or update its wiki node
                 from tools.auto_node import auto_create_node
                 result = auto_create_node(filepath, self.kb_root)
                 if result:
-                    _log(f"Auto-created: wiki/{result['wiki_page']} "
+                    action = "Updated" if result.get("updated") else "Auto-created"
+                    _log(f"{action}: wiki/{result['wiki_page']} "
                          f"({result['sections']} sections)")
         except Exception as e:
             _log(f"Error processing {filepath.name}: {e}")

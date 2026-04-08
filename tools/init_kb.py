@@ -35,12 +35,16 @@ def init_knowledge_base(target: Path, mode: str = "standalone") -> dict:
     conn.close()
     created.append(".mindgraph/mindgraph.db")
 
-    # Project mode: create a CLAUDE.md snippet
+    # Project mode: create a CLAUDE.md snippet + scan source files
     if mode == "project":
         claude_md = target / "CLAUDE.md"
         if not claude_md.exists():
             claude_md.write_text(CLAUDE_MD_SNIPPET, encoding="utf-8")
             created.append("CLAUDE.md")
+
+        # Scan project source files and create wiki nodes
+        wiki_nodes = _scan_project_sources(target)
+        created.extend(wiki_nodes)
 
     # Log initialization
     log_path = target / "wiki" / "log.md"
@@ -49,6 +53,47 @@ def init_knowledge_base(target: Path, mode: str = "standalone") -> dict:
         f.write(f"\n[{now}] [INGEST] Knowledge base initialized (mode={mode})\n")
 
     return {"target": str(target), "mode": mode, "created": created}
+
+
+# Extensions to scan during project init
+_SOURCE_EXTS = {
+    ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java",
+    ".c", ".cpp", ".h", ".rb", ".swift", ".kt", ".cs", ".sh",
+    ".yaml", ".yml", ".json", ".toml",
+}
+
+# Directories to skip during scan
+_SKIP_DIRS = {
+    ".git", ".mindgraph", ".venv", "venv", "node_modules", "__pycache__",
+    "dist", "build", ".next", ".nuxt", "target", "bin", "obj",
+    "wiki", "raw", ".claude", ".idea", ".vscode",
+}
+
+
+def _scan_project_sources(target: Path) -> list[str]:
+    """Scan the project for source files and create wiki nodes for each.
+
+    Returns list of created wiki page paths (e.g., 'wiki/my_module.md').
+    """
+    from tools.auto_node import auto_create_node
+
+    source_files = []
+    for path in sorted(target.rglob("*")):
+        if not path.is_file():
+            continue
+        # Skip files in ignored directories
+        if any(part in _SKIP_DIRS for part in path.relative_to(target).parts):
+            continue
+        if path.suffix.lower() in _SOURCE_EXTS:
+            source_files.append(path)
+
+    created = []
+    for filepath in source_files:
+        result = auto_create_node(filepath, target)
+        if result:
+            created.append(f"wiki/{result['wiki_page']}")
+
+    return created
 
 
 CLAUDE_MD_SNIPPET = """## MindGraph Knowledge Base
@@ -90,9 +135,13 @@ def main():
     args = parser.parse_args()
     target = Path(args.target).resolve()
     result = init_knowledge_base(target, args.mode)
+    wiki_nodes = [c for c in result["created"] if c.startswith("wiki/") and c != "wiki/"]
+    scaffolding = [c for c in result["created"] if c not in wiki_nodes]
     print(f"MindGraph initialized at {result['target']} (mode={result['mode']})")
-    for item in result["created"]:
+    for item in scaffolding:
         print(f"  + {item}")
+    if wiki_nodes:
+        print(f"  + {len(wiki_nodes)} wiki nodes created from project source files")
 
 
 if __name__ == "__main__":
